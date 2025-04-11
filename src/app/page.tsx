@@ -5,20 +5,19 @@ import AppointmentCalendar from "@/components/appointment-calendar";
 import {RevenueInput} from "@/components/revenue-input";
 import {ExpenseInput} from "@/components/expense-input";
 import {Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarSeparator, SidebarTrigger} from "@/components/ui/sidebar";
+import Link from "next/link";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {useEffect, useState} from "react";
-import {Revenue, Expense} from "@/types";
+import {Expense, Revenue} from "@/types";
 import { LucideIcon } from 'lucide-react';
 import { Calendar, DollarSign, FileBarChart, LayoutDashboard } from 'lucide-react';
 
 const STORAGE_KEY_REVENUE = 'bizflow_revenue';
 const STORAGE_KEY_EXPENSE = 'bizflow_expenses';
 
+// Function to get item from local storage, if it doesn't exist return the default value.
 function getItem<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') {
-    return defaultValue;
-  }
   const stored = localStorage.getItem(key);
   if (!stored) {
     return defaultValue;
@@ -31,10 +30,9 @@ function getItem<T>(key: string, defaultValue: T): T {
   }
 }
 
+// Function to set item in local storage.
 function setItem<T>(key: string, value: T) {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
+  localStorage.setItem(key, JSON.stringify(value));
 }
 
 const navItems: {
@@ -64,24 +62,50 @@ const navItems: {
   },
 ];
 
-
+// The main component of the home page.
 export default function Home() {
-  const [revenueData, setRevenueData] = useState<Revenue[]>(() => getItem(STORAGE_KEY_REVENUE, []));
-  const [expenseData, setExpenseData] = useState<Expense[]>(() => getItem(STORAGE_KEY_EXPENSE, []));
+  // State to hold the revenue data. Initialize with an empty array.
+  const [revenueData, setRevenueData] = useState<Revenue[]>([]);
+  // State to hold the expense data. Initialize with an empty array.
+  const [expenseData, setExpenseData] = useState<Expense[]>([]);
 
+  // Effect to load data from local storage when the component mounts
   useEffect(() => {
-    setItem(STORAGE_KEY_REVENUE, revenueData);
+    // Check if we are in the client side
+    // This code only runs on the client side.
+    if (typeof window !== 'undefined') {
+      // Load revenue data from local storage if it exists.
+      const storedRevenue = localStorage.getItem(STORAGE_KEY_REVENUE);
+      if(storedRevenue) {
+        setRevenueData(getItem<Revenue[]>(STORAGE_KEY_REVENUE, []));
+      }
+      // Load expense data from local storage if it exists.
+      const storedExpenses = localStorage.getItem(STORAGE_KEY_EXPENSE);
+      if(storedExpenses) {
+        setExpenseData(getItem<Expense[]>(STORAGE_KEY_EXPENSE, []));
+      }
+    }
+  }, []);
+
+  // Effect to save revenue data to local storage when it changes.
+  useEffect(() => {
+    // Check if we are in the client side
+    if (typeof window !== 'undefined') {
+      setItem(STORAGE_KEY_REVENUE, revenueData);
+    }
   }, [revenueData]);
-
+  // Effect to save expense data to local storage when it changes.
   useEffect(() => {
-    setItem(STORAGE_KEY_EXPENSE, expenseData);
-  }, [expenseData]);
+    // Check if we are in the client side
+    if (typeof window !== 'undefined') {
+      setItem(STORAGE_KEY_EXPENSE, expenseData);
+    }}, [expenseData]);
 
   const handleRevenueSubmit = (newRevenue: Revenue) => {
     setRevenueData([...revenueData, newRevenue]);
   };
 
-  const handleExpenseSubmit = (newExpense: Expense) => {
+  const handleExpenseSubmit = (newExpense: Expense) => { // Modify to add the new expense to the list of expenses
     setExpenseData([...expenseData, newExpense]);
   };
 
@@ -97,13 +121,15 @@ export default function Home() {
           <CardDescription>Basic ERP for Small Businesses</CardDescription>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton href={item.href}>
-                  <item.icon className="mr-2 h-4 w-4" />
-                  <span>{item.title}</span>
-                </SidebarMenuButton>
+          <SidebarMenu>{
+            // Iterate the navigation items
+            navItems.map((item) => (
+              // Render a SidebarMenuItem
+              <SidebarMenuItem key={item.title} >
+                {/* Use a Link to allow internal navigation to each section */}
+                <Link href={item.href} className="flex items-center w-full px-3 py-2 rounded-md hover:bg-accent">
+                    <item.icon className="mr-2 h-4 w-4" />{item.title}
+                </Link>
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
